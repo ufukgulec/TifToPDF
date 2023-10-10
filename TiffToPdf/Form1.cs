@@ -1,4 +1,5 @@
-﻿using iTextSharp.text;
+﻿using DocConverter;
+using iTextSharp.text;
 using iTextSharp.text.pdf;
 using System;
 using System.Collections.Generic;
@@ -28,6 +29,7 @@ namespace TiffToPdf
         {
             openFileDialog.Title = "Browse Text Files";
             openFileDialog.Filter = "Tif Files (*.tif)|*.tif|Tiff Files (*.tiff)|*.tiff";
+            openFileDialog.Multiselect = true;
         }
         /// <summary>
         /// Çevrilecek tif dosyası seçilir.
@@ -73,9 +75,29 @@ namespace TiffToPdf
         /// </summary>
         private void btnConvertPDF_Click(object sender, EventArgs e)
         {
-            byte[] PdfByteArray = TiffToPDFByteArrayFromPath(sourceDocument.Text);
+            //byte[] PdfByteArray = TiffToPDFByteArrayFromPath(sourceDocument.Text);
 
-            System.IO.File.WriteAllBytes(targetDocument.Text, PdfByteArray);
+            //System.IO.File.WriteAllBytes(targetDocument.Text, PdfByteArray);
+
+            var tifBytes = Tif2Pdf.GetByteArray(sourceDocument.Text);
+
+            var pdfBytes = Tif2Pdf.ConvertFromPath(sourceDocument.Text);
+
+            if (openFileDialog.FileNames.Length > 1)
+            {
+                foreach (var name in openFileDialog.FileNames)
+                {
+                    Tif2Pdf.ConvertFromPath(sourceDocument.Text, $"{GetFilePath(name)}.pdf");
+                }
+            }
+            else
+            {
+                Tif2Pdf.ConvertFromPath(sourceDocument.Text, targetDocument.Text);
+            }
+
+            //Tif2Pdf.ConvertFromByteArray(tifBytes, targetDocument.Text);
+
+            //Tif2Pdf.SplitToJpeg(sourceDocument.Text);
 
         }
         /// <summary>
@@ -107,6 +129,8 @@ namespace TiffToPdf
                             // TIFF sayfasını PDF sayfasına ekleyin
                             document.NewPage();
                             document.Add(Image.GetInstance(image, ImageFormat.Tiff));
+                            image.Dispose();
+                            //document.Add(Image.GetInstance(image, BaseColor.WHITE));
                         }
                         document.Close();
                         pdfWriter.Close();
@@ -135,8 +159,10 @@ namespace TiffToPdf
                     images.Add(System.Drawing.Image.FromStream(byteStream));
 
                     byteStream.Close();
+                    byteStream.Dispose();
                 }
             }
+            bitmap.Dispose();
             return images;
         }
 
